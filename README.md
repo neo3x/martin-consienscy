@@ -2,7 +2,7 @@
 
 > *An experimental exploration of consciousness, self-hood, and emergent cognition through the construction of an AI system with functional properties associated with conscious experience.*
 
-**Status**: Phase 0 - Foundation (Planning Complete)
+**Status**: Phase 0 - Foundation (Implementation Complete)
 **Version**: 0.1.0
 **Started**: November 30, 2025
 
@@ -115,52 +115,97 @@ Full stack details: [TOOLS_AND_STACK.md](./TOOLS_AND_STACK.md)
 - ✅ LLM integration with state modulation
 
 **Timeline**: 2-3 weeks
-**Status**: Documentation complete, ready to implement
+**Status**: ✅ **COMPLETE** - Implementation finished, ready for testing
 
 ---
 
 ## Getting Started
 
 ### Prerequisites
-- Python 3.11+
-- PostgreSQL 15+ with pgvector extension
-- Redis (optional for Phase 0)
-- Anthropic API key
+- **Python 3.11+** (required)
+- **Anthropic API key** (required)
+- PostgreSQL 15+ with pgvector (not needed for Phase 0, will be used in later phases)
+- Redis (not needed for Phase 0, will be used in later phases)
 
-### Installation
+### Quick Start (Phase 0)
 
 ```bash
-# Clone the repository
-git clone <repository-url>
+# 1. Clone and setup
 cd martin-consienscy
-
-# Create virtual environment
 python -m venv venv
 source venv/bin/activate  # On Windows: venv\Scripts\activate
 
-# Install dependencies
+# 2. Install dependencies
 pip install -r requirements.txt
-pip install -r requirements-dev.txt  # For development
 
-# Set up environment variables
+# 3. Configure API key
 cp .env.example .env
 # Edit .env and add your ANTHROPIC_API_KEY
 
-# Initialize database
-python scripts/setup_database.py
+# 4. Run the system
+python -m src.main
 
-# Run tests
-pytest
+# That's it! The system will:
+# - Initialize emotional state (neutral start)
+# - Load any existing memories
+# - Present an interactive REPL interface
 ```
 
 ### First Interaction
 
-```bash
-# Run the agent (Phase 0)
-python src/main.py
+Once running, you'll see an interactive prompt. Try these:
 
-# Or use the API (if implemented)
-uvicorn src.api.app:app --reload
+```
+You: Hello! Can you tell me about yourself?
+
+You: status
+# Shows current emotional state and memory statistics
+
+You: What do you experience when we talk?
+# Tests existential_question trigger
+
+You: help
+# Shows available commands
+
+You: quit
+# Exits the system
+```
+
+### Phase 0 Features You Can Explore
+
+1. **Emotional State Dynamics**:
+   - Ask contradictory questions to trigger `contradiction_detected`
+   - Thank the system to trigger `user_recognition`
+   - Ask about its nature to trigger `existential_question`
+   - Watch emotional dimensions change gradually (inertia)
+
+2. **Memory System**:
+   - Have significant conversations - they'll be remembered
+   - Reference past interactions - the system will recall them
+   - Use `status` to see how many memories have been consolidated
+
+3. **State Modulation**:
+   - Notice how responses change based on emotional state
+   - When certainty is low, responses are more tentative
+   - When connection is high, responses are more personal
+
+### Development Setup
+
+For development and testing:
+
+```bash
+# Install dev dependencies
+pip install -r requirements-dev.txt
+
+# Run tests (when available)
+pytest
+
+# Run with verbose logging
+DEBUG=true VERBOSE_LOGGING=true python -m src.main
+
+# Format code
+black src/ tests/
+ruff check src/ tests/
 ```
 
 ---
