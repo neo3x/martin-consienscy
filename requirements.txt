@@ -1,0 +1,27 @@
+# LLM
+anthropic>=0.39.0
+
+# Data & Storage
+psycopg[binary,pool]>=3.1.0
+chromadb>=0.4.0
+redis>=5.0.0
+orjson>=3.9.0
+
+# Embeddings
+sentence-transformers>=2.2.0
+
+# Data Modeling
+pydantic>=2.5.0
+pydantic-settings>=2.1.0
+
+# Utils
+structlog>=23.2.0
+pendulum>=3.0.0
+python-dotenv>=1.0.0
+
+# Web (optional for Phase 0, needed later)
+fastapi>=0.109.0
+uvicorn[standard]>=0.25.0
+
+# Async
+httpx>=0.26.0
