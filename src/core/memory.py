@@ -213,12 +213,25 @@ class EpisodicMemoryManager:
         return max(0.0, min(1.0, novelty))
 
     def _cosine_similarity(self, a: List[float], b: List[float]) -> float:
-        """Calculate cosine similarity between two vectors."""
+        """Calculate cosine similarity between two vectors.
+
+        Args:
+            a: First vector
+            b: Second vector
+
+        Returns:
+            Cosine similarity (0 to 1), or 0.0 if either vector has zero norm
+        """
         import numpy as np
 
         a_np = np.array(a)
         b_np = np.array(b)
-        return float(np.dot(a_np, b_np) / (np.linalg.norm(a_np) * np.linalg.norm(b_np)))
+
+        norm_product = np.linalg.norm(a_np) * np.linalg.norm(b_np)
+        if norm_product == 0:
+            return 0.0
+
+        return float(np.dot(a_np, b_np) / norm_product)
 
     def _estimate_identity_relevance(self, user_input: str, system_response: str) -> float:
         """Estimate relevance to identity using simple heuristics (Phase 0).

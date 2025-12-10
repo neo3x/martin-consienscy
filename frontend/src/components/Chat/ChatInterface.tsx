@@ -9,9 +9,11 @@ import type { ChatMessage } from '@/types';
 
 export function ChatInterface() {
   const [input, setInput] = useState('');
-  const [isProcessing, setIsProcessing] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
+  // Use global state for processing indicator (synced with WebSocket)
+  const isProcessing = useSystemStore((state) => state.isProcessing);
+  const setProcessing = useSystemStore((state) => state.setProcessing);
   const chatMessages = useSystemStore((state) => state.chatMessages);
   const addChatMessage = useSystemStore((state) => state.addChatMessage);
   const emotionalState = useSystemStore((state) => state.emotionalState);
@@ -38,7 +40,7 @@ export function ChatInterface() {
 
     addChatMessage(userMessage);
     setInput('');
-    setIsProcessing(true);
+    setProcessing(true);
 
     try {
       const response = await apiClient.sendMessage(userMessage.content);
@@ -65,7 +67,7 @@ export function ChatInterface() {
 
       addChatMessage(errorMessage);
     } finally {
-      setIsProcessing(false);
+      setProcessing(false);
     }
   };
 

@@ -14,21 +14,38 @@ logger = structlog.get_logger()
 class ConnectionManager:
     """Manages WebSocket connections and broadcasting."""
 
+    # Maximum number of concurrent WebSocket connections
+    MAX_CONNECTIONS = 100
+
     def __init__(self):
         """Initialize the connection manager."""
         self.active_connections: Set[WebSocket] = set()
         self.subscriptions: Dict[WebSocket, Set[str]] = {}
 
-    async def connect(self, websocket: WebSocket):
+    async def connect(self, websocket: WebSocket) -> bool:
         """Accept a new WebSocket connection.
 
         Args:
             websocket: The WebSocket connection
+
+        Returns:
+            True if connection was accepted, False if rejected due to limit
         """
+        if len(self.active_connections) >= self.MAX_CONNECTIONS:
+            logger.warning(
+                "websocket_connection_rejected",
+                reason="max_connections_reached",
+                current=len(self.active_connections),
+                max=self.MAX_CONNECTIONS,
+            )
+            await websocket.close(code=1013, reason="Maximum connections reached")
+            return False
+
         await websocket.accept()
         self.active_connections.add(websocket)
         self.subscriptions[websocket] = set()
         logger.info("websocket_connected", total_connections=len(self.active_connections))
+        return True
 
     def disconnect(self, websocket: WebSocket):
         """Remove a WebSocket connection.
@@ -120,7 +137,9 @@ async def websocket_endpoint(websocket: WebSocket):
     Args:
         websocket: The WebSocket connection
     """
-    await manager.connect(websocket)
+    connected = await manager.connect(websocket)
+    if not connected:
+        return  # Connection was rejected due to limit
 
     try:
         # Send initial connection success message
