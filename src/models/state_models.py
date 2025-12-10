@@ -270,11 +270,18 @@ class TriggerDefinition(BaseModel):
         default=1.0, ge=0.0, le=2.0, description="How strongly this trigger affects state"
     )
 
-    def apply_to_state(self, state: EmotionalState, intensity: float = 1.0) -> EmotionalState:
+    def apply_to_state(self, state: EmotionalState, intensity: float = 1.0) -> EmotionalDimensions:
         """Apply this trigger to an emotional state.
 
-        Note: This doesn't modify state in-place, it's used to calculate targets
-        for differential updates.
+        Note: This doesn't modify state in-place, it's used to calculate target
+        dimensions for differential updates.
+
+        Args:
+            state: The current emotional state
+            intensity: Intensity multiplier (0-1)
+
+        Returns:
+            Target EmotionalDimensions after applying the trigger
         """
         total_intensity = self.intensity_multiplier * intensity
 

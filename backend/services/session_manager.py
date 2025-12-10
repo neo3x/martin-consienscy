@@ -1,16 +1,21 @@
 """Session manager for handling interaction loop instances."""
 
+import threading
 import time
 from datetime import datetime
 from typing import Dict, List, Optional
 from uuid import UUID
 
+import numpy as np
 import structlog
 
 from backend.models.api_models import TimelineEvent
 from src.core.loop import InteractionLoop
 
 logger = structlog.get_logger()
+
+# Lock for thread-safe singleton initialization
+_session_manager_lock = threading.Lock()
 
 
 class SessionManager:
@@ -122,7 +127,7 @@ class SessionManager:
             Tuple of (memories, total_count, formative_count)
         """
         loop = self.get_loop()
-        all_memories = loop.memory_manager.memories
+        all_memories = list(loop.memory_manager.memories.values())
 
         # Calculate formative memories (high retention strength)
         formative_count = sum(1 for m in all_memories if m.calculate_retention_strength() > 0.8)
@@ -161,23 +166,24 @@ class SessionManager:
         """
         loop = self.get_loop()
 
-        for memory in loop.memory_manager.memories:
-            if memory.id == memory_id:
-                return {
-                    "id": memory.id,
-                    "type": memory.type.value,
-                    "summary": memory.summary,
-                    "emotional_valence": memory.emotional_valence,
-                    "subjective_importance": memory.subjective_importance,
-                    "surprise": memory.surprise,
-                    "created_at": memory.created_at,
-                    "last_recalled": memory.last_recalled,
-                    "times_recalled": memory.times_recalled,
-                    "retention_strength": memory.calculate_retention_strength(),
-                    "interpretation_evolution": memory.interpretation_evolution,
-                }
+        # Direct lookup by UUID key
+        memory = loop.memory_manager.memories.get(memory_id)
+        if memory is None:
+            return None
 
-        return None
+        return {
+            "id": memory.id,
+            "type": memory.type.value,
+            "summary": memory.summary,
+            "emotional_valence": memory.emotional_valence,
+            "subjective_importance": memory.subjective_importance,
+            "surprise": memory.surprise,
+            "created_at": memory.created_at,
+            "last_recalled": memory.last_recalled,
+            "times_recalled": memory.times_recalled,
+            "retention_strength": memory.calculate_retention_strength(),
+            "interpretation_evolution": memory.interpretation_evolution,
+        }
 
     def get_memory_network(self, similarity_threshold: float = 0.7) -> tuple[List[dict], List[dict]]:
         """Get memory network for visualization.
@@ -189,7 +195,7 @@ class SessionManager:
             Tuple of (nodes, edges)
         """
         loop = self.get_loop()
-        memories = loop.memory_manager.memories
+        memories_list = list(loop.memory_manager.memories.values())
 
         # Create nodes
         nodes = [
@@ -201,13 +207,13 @@ class SessionManager:
                 "times_recalled": m.times_recalled,
                 "created_at": m.created_at,
             }
-            for m in memories
+            for m in memories_list
         ]
 
         # Create edges based on semantic similarity
         edges = []
-        for i, mem1 in enumerate(memories):
-            for mem2 in memories[i + 1:]:
+        for i, mem1 in enumerate(memories_list):
+            for mem2 in memories_list[i + 1:]:
                 if mem1.embedding and mem2.embedding:
                     # Calculate cosine similarity
                     similarity = self._cosine_similarity(mem1.embedding, mem2.embedding)
@@ -233,7 +239,7 @@ class SessionManager:
         uptime_seconds = int(time.time() - self._start_time)
 
         # Get memory stats
-        all_memories = loop.memory_manager.memories
+        all_memories = list(loop.memory_manager.memories.values())
         formative_count = sum(1 for m in all_memories if m.calculate_retention_strength() > 0.8)
 
         # Calculate average consolidation score if we have memories
@@ -315,8 +321,6 @@ class SessionManager:
         Returns:
             Cosine similarity (0 to 1)
         """
-        import numpy as np
-
         v1 = np.array(vec1)
         v2 = np.array(vec2)
 
@@ -334,12 +338,15 @@ _session_manager: Optional[SessionManager] = None
 
 
 def get_session_manager() -> SessionManager:
-    """Get the global session manager instance.
+    """Get the global session manager instance (thread-safe).
 
     Returns:
         SessionManager: The global session manager
     """
     global _session_manager
     if _session_manager is None:
-        _session_manager = SessionManager()
+        with _session_manager_lock:
+            # Double-check locking pattern
+            if _session_manager is None:
+                _session_manager = SessionManager()
     return _session_manager

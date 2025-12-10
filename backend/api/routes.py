@@ -1,6 +1,7 @@
 """REST API routes for the backend."""
 
 import time
+from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
@@ -151,32 +152,6 @@ async def get_memories(
         raise HTTPException(status_code=500, detail=f"Failed to get memories: {str(e)}")
 
 
-@router.get("/memories/{memory_id}", response_model=MemoryResponse)
-async def get_memory(memory_id: UUID):
-    """Get a specific memory by ID.
-
-    Args:
-        memory_id: UUID of the memory
-
-    Returns:
-        MemoryResponse with the memory details
-    """
-    try:
-        session_manager = get_session_manager()
-        memory = session_manager.get_memory_by_id(memory_id)
-
-        if memory is None:
-            raise HTTPException(status_code=404, detail="Memory not found")
-
-        return MemoryResponse(**memory)
-
-    except HTTPException:
-        raise
-    except Exception as e:
-        logger.error("get_memory_failed", error=str(e), exc_info=True)
-        raise HTTPException(status_code=500, detail=f"Failed to get memory: {str(e)}")
-
-
 @router.get("/memories/network", response_model=MemoryNetworkResponse)
 async def get_memory_network(
     similarity_threshold: float = Query(0.7, ge=0.0, le=1.0),
@@ -201,6 +176,32 @@ async def get_memory_network(
     except Exception as e:
         logger.error("get_memory_network_failed", error=str(e), exc_info=True)
         raise HTTPException(status_code=500, detail=f"Failed to get memory network: {str(e)}")
+
+
+@router.get("/memories/{memory_id}", response_model=MemoryResponse)
+async def get_memory(memory_id: UUID):
+    """Get a specific memory by ID.
+
+    Args:
+        memory_id: UUID of the memory
+
+    Returns:
+        MemoryResponse with the memory details
+    """
+    try:
+        session_manager = get_session_manager()
+        memory = session_manager.get_memory_by_id(memory_id)
+
+        if memory is None:
+            raise HTTPException(status_code=404, detail="Memory not found")
+
+        return MemoryResponse(**memory)
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("get_memory_failed", error=str(e), exc_info=True)
+        raise HTTPException(status_code=500, detail=f"Failed to get memory: {str(e)}")
 
 
 @router.get("/system/status", response_model=SystemStatusResponse)
@@ -241,7 +242,6 @@ async def get_timeline(
             start_time = events[0].timestamp
             end_time = events[-1].timestamp
         else:
-            from datetime import datetime
             now = datetime.now()
             start_time = now
             end_time = now

@@ -5,6 +5,8 @@ variables and .env files.
 """
 
 from typing import Literal
+
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +22,23 @@ class Settings(BaseSettings):
 
     # LLM Configuration
     anthropic_api_key: str
+
+    @field_validator("anthropic_api_key")
+    @classmethod
+    def validate_api_key(cls, v: str) -> str:
+        """Validate that the API key is not empty and has correct format."""
+        if not v or not v.strip():
+            raise ValueError("ANTHROPIC_API_KEY cannot be empty")
+        v = v.strip()
+        if not v.startswith("sk-ant-"):
+            raise ValueError(
+                "ANTHROPIC_API_KEY should start with 'sk-ant-'. "
+                "Please check your API key format."
+            )
+        if len(v) < 20:
+            raise ValueError("ANTHROPIC_API_KEY appears to be too short")
+        return v
+
     llm_model: str = "claude-sonnet-4-5-20250929"
     llm_max_tokens: int = 4096
     llm_temperature: float = 0.7
